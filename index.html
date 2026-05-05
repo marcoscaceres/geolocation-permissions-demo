@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approximate Geolocation: Permissions Model Comparison</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --surface2: #0f3460;
+  --text: #e0e0e0;
+  --muted: #888;
+  --accent: #4fc3f7;
+  --pass: #66bb6a;
+  --fail: #ef5350;
+  --warn: #ffa726;
+  --border: #333;
+  font-family: system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); padding: 1.5rem; line-height: 1.5; }
+h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 0.5rem; }
+h3 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+
+.controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+.controls label { font-size: 0.85rem; color: var(--muted); display: block; margin-bottom: 0.5rem; }
+.btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.btn:hover { background: var(--accent); color: #000; }
+.btn.active { background: var(--accent); color: #000; font-weight: 600; }
+
+.state-display {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.panels { display: grid; gap: 1.5rem; }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.verdict {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.verdict-pass { background: var(--pass); color: #000; }
+.verdict-fail { background: var(--fail); color: #fff; }
+.verdict-weakened { background: var(--warn); color: #000; }
+.verdict-na { background: var(--border); color: var(--muted); }
+
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+.model-col {
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+.model-col h3 { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+.result-row:last-child { border-bottom: none; }
+.result-label { color: var(--muted); }
+.result-value { font-family: monospace; font-weight: 500; }
+.result-value.granted { color: var(--pass); }
+.result-value.prompt { color: var(--warn); }
+.result-value.denied { color: var(--fail); }
+.result-value.throws { color: var(--fail); font-style: italic; }
+.result-value.true { color: var(--pass); }
+.result-value.false { color: var(--fail); }
+
+.code-block {
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--muted);
+}
+
+.event-log {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  max-height: 80px;
+  overflow-y: auto;
+  font-family: monospace;
+  color: var(--muted);
+}
+.event-log .event { padding: 0.1rem 0; }
+.event-log .event::before { content: "→ "; color: var(--accent); }
+
+.summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+.summary table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.summary th, .summary td {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.summary th { background: var(--surface2); color: var(--accent); font-weight: 500; }
+
+.note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<h1>Approximate Geolocation: Permissions Model Comparison</h1>
+<p class="subtitle">Testing whether a single-permission model can satisfy all three developer properties. Objective, side-by-side.</p>
+
+<div class="controls">
+  <label>Simulate User Action (applies to both models simultaneously):</label>
+  <div class="btn-group">
+    <button class="btn" data-action="reset">Reset (No Decision)</button>
+    <button class="btn" data-action="grant-approximate">Grant Approximate Only</button>
+    <button class="btn" data-action="grant-precise">Grant Precise (implies approx)</button>
+    <button class="btn" data-action="deny">Deny All</button>
+    <button class="btn" data-action="revoke-precise">Revoke Precise → Approximate Only</button>
+    <button class="btn" data-action="revoke-all">Revoke All</button>
+  </div>
+  <div class="state-display">
+    <strong>Internal user state:</strong> <span id="user-state">No decision (prompt)</span>
+  </div>
+
+  <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+    <label>Critical assumption: What does legacy getCurrentPosition() (no accuracyMode) do when only approximate is granted?</label>
+    <div class="btn-group" id="legacy-behavior-group">
+      <button class="btn active" data-legacy="returns-approx">Returns approximate position (permissive, more backwards-compat)</button>
+      <button class="btn" data-legacy="prompts-precise">Prompts for precise (strict, Chromium's current behavior)</button>
+    </div>
+    <p class="note" style="margin-top: 0.5rem;">This assumption is not articulated in the thread but changes which model "wins." Toggle to see both outcomes.</p>
+  </div>
+</div>
+
+<div class="panels">
+
+  <!-- Panel 1: Backwards Compatibility -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Property 1: Backwards Compatibility</h2>
+      <div>
+        <span class="verdict verdict-na" id="v1-two">—</span>
+        <span class="verdict verdict-na" id="v1-single">—</span>
+        <span class="verdict verdict-na" id="v1-desc">—</span>
+      </div>
+    </div>
+    <div class="code-block">// Legacy code (no accuracyMode)
+const status = await permissions.query({name: "geolocation"});
+navigator.geolocation.getCurrentPosition(success, error);</div>
+    <div class="comparison">
+      <div class="model-col">
+        <h3>Two-Permission (Chromium)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r1-two-query">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">getCurrentPosition() behavior</span>
+          <span class="result-value" id="r1-two-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query predicts behavior?</span>
+          <span class="result-value" id="r1-two-predicts">—</span>
+        </div>
+      </div>
+      <div class="model-col">
+        <h3>Single-Permission (WebKit)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r1-single-query">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">getCurrentPosition() behavior</span>
+          <span class="result-value" id="r1-single-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query predicts behavior?</span>
+          <span class="result-value" id="r1-single-predicts">—</span>
+        </div>
+      </div>
+    </div>
+    <p class="note">Legacy code never uses accuracyMode. Default behavior = request precise.</p>
+  </div>
+
+  <!-- Panel 2: Approximate + Query -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Property 2: Approximate + permissions.query()</h2>
+      <div>
+        <span class="verdict verdict-na" id="v2-two">—</span>
+        <span class="verdict verdict-na" id="v2-single">—</span>
+      </div>
+    </div>
+    <div class="code-block">// Approximate-only site
+const status = await permissions.query({name: "geolocation-approximate"}); // or "geolocation"
+navigator.geolocation.getCurrentPosition(s, e, {accuracyMode: "approximate"});</div>
+    <div class="comparison">
+      <div class="model-col">
+        <h3>Two-Permission (Chromium)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation-approximate")</span>
+          <span class="result-value" id="r2-two-query-approx">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r2-two-query-geo">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">gCP({approximate}) behavior</span>
+          <span class="result-value" id="r2-two-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query("geo-approx") predicts?</span>
+          <span class="result-value" id="r2-two-predicts">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">onchange fires on approx grant?</span>
+          <span class="result-value" id="r2-two-onchange">—</span>
+        </div>
+      </div>
+      <div class="model-col">
+        <h3>Single-Permission (WebKit)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation-approximate")</span>
+          <span class="result-value throws" id="r2-single-query-approx">TypeError</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r2-single-query-geo">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">gCP({approximate}) behavior</span>
+          <span class="result-value" id="r2-single-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query("geolocation") predicts?</span>
+          <span class="result-value" id="r2-single-predicts">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">onchange fires on approx grant?</span>
+          <span class="result-value" id="r2-single-onchange">—</span>
+        </div>
+      </div>
+    </div>
+    <p class="note">Key question: can the developer predict whether gCP({approximate}) will prompt?</p>
+  </div>
+
+  <!-- Panel 3: Upgrade Flow -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Property 3: Upgrade Flow (Approximate → Precise)</h2>
+      <div>
+        <span class="verdict verdict-na" id="v3-two">—</span>
+        <span class="verdict verdict-na" id="v3-single">—</span>
+      </div>
+    </div>
+    <div class="code-block">// After getting approximate, site wants precise
+const status = await permissions.query({name: "geolocation"});
+// Can the developer predict if this will prompt?
+navigator.geolocation.getCurrentPosition(s, e, {accuracyMode: "precise"});</div>
+    <div class="comparison">
+      <div class="model-col">
+        <h3>Two-Permission (Chromium)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r3-two-query">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">gCP({precise}) behavior</span>
+          <span class="result-value" id="r3-two-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query predicts behavior?</span>
+          <span class="result-value" id="r3-two-predicts">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">developer can show pre-prompt UI?</span>
+          <span class="result-value" id="r3-two-preprompt">—</span>
+        </div>
+      </div>
+      <div class="model-col">
+        <h3>Single-Permission (WebKit)</h3>
+        <div class="result-row">
+          <span class="result-label">query("geolocation")</span>
+          <span class="result-value" id="r3-single-query">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">gCP({precise}) behavior</span>
+          <span class="result-value" id="r3-single-gcp">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">query predicts behavior?</span>
+          <span class="result-value" id="r3-single-predicts">—</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">developer can show pre-prompt UI?</span>
+          <span class="result-value" id="r3-single-preprompt">—</span>
+        </div>
+      </div>
+    </div>
+    <p class="note">This is the crux: State 5 (approximate-only granted). Both models have a prediction gap here.</p>
+  </div>
+
+</div>
+
+<!-- Event Log -->
+<div class="panel" style="margin-top: 1.5rem;">
+  <h2>Event Log</h2>
+  <div class="comparison">
+    <div class="model-col">
+      <h3>Two-Permission Events</h3>
+      <div class="event-log" id="log-two"></div>
+    </div>
+    <div class="model-col">
+      <h3>Single-Permission Events</h3>
+      <div class="event-log" id="log-single"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Table -->
+<div class="summary">
+  <h2>Summary: Invariant Analysis</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>User State</th>
+        <th>Developer Action</th>
+        <th>Two-Permission: query predicts?</th>
+        <th>Single-Permission: query predicts?</th>
+      </tr>
+    </thead>
+    <tbody id="summary-body">
+    </tbody>
+  </table>
+  <p class="note" style="margin-top: 0.75rem;">
+    <strong>Key finding:</strong> <span id="key-finding">Interact with the controls above to populate this table.</span>
+  </p>
+</div>
+
+<script>
+"use strict";
+
+// User states (ground truth of what the user decided)
+const STATES = {
+  PROMPT: "prompt",           // No decision made
+  APPROX_ONLY: "approx",     // Granted approximate, precise not decided
+  PRECISE: "precise",         // Granted precise (implies approximate)
+  DENIED: "denied",           // Denied all
+};
+
+let userState = STATES.PROMPT;
+let legacyBehavior = "returns-approx"; // "returns-approx" or "prompts-precise"
+
+// Two-Permission Model (Chromium)
+// Six internal states mapped to two queryable permissions
+const twoPermission = {
+  name: "Two-Permission (Chromium)",
+
+  queryGeo() {
+    switch (userState) {
+      case STATES.DENIED: return "denied";
+      case STATES.PROMPT: return "prompt";
+      case STATES.APPROX_ONLY: return "prompt";  // State 5: precise not granted
+      case STATES.PRECISE: return "granted";
+    }
+  },
+
+  queryGeoApprox() {
+    switch (userState) {
+      case STATES.DENIED: return "denied";
+      case STATES.PROMPT: return "prompt";
+      case STATES.APPROX_ONLY: return "granted"; // State 5: approx IS granted
+      case STATES.PRECISE: return "granted";
+    }
+  },
+
+  gcpDefault() {
+    // Legacy: getCurrentPosition() with no options = request precise
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY:
+        return legacyBehavior === "returns-approx"
+          ? "returns position (approx)"
+          : "prompts user";
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  gcpApproximate() {
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY: return "returns position";
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  gcpPrecise() {
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY: return "prompts user";
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  queryPredictsDefault() {
+    const q = this.queryGeo();
+    const b = this.gcpDefault();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  queryPredictsApprox() {
+    const q = this.queryGeoApprox();
+    const b = this.gcpApproximate();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  queryPredictsPrecise() {
+    const q = this.queryGeo();
+    const b = this.gcpPrecise();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  onchangeFires(prevState, newState) {
+    const prevApprox = prevState === STATES.APPROX_ONLY || prevState === STATES.PRECISE;
+    const newApprox = newState === STATES.APPROX_ONLY || newState === STATES.PRECISE;
+    return prevApprox !== newApprox;
+  }
+};
+
+// Single-Permission Model (WebKit)
+const singlePermission = {
+  name: "Single-Permission (WebKit)",
+
+  queryGeo() {
+    switch (userState) {
+      case STATES.DENIED: return "denied";
+      case STATES.PROMPT: return "prompt";
+      case STATES.APPROX_ONLY: return "granted"; // ANY access = granted
+      case STATES.PRECISE: return "granted";
+    }
+  },
+
+  queryGeoApprox() {
+    return "TypeError"; // Not a valid queryable name
+  },
+
+  gcpDefault() {
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY:
+        return legacyBehavior === "returns-approx"
+          ? "returns position (approx)"
+          : "prompts user";
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  gcpApproximate() {
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY: return "returns position";
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  gcpPrecise() {
+    switch (userState) {
+      case STATES.DENIED: return "throws (denied)";
+      case STATES.PROMPT: return "prompts user";
+      case STATES.APPROX_ONLY: return "prompts user"; // upgrade prompt
+      case STATES.PRECISE: return "returns position";
+    }
+  },
+
+  // Does query("geolocation") predict getCurrentPosition() default behavior?
+  queryPredictsDefault() {
+    const q = this.queryGeo();
+    const b = this.gcpDefault();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  // Does query("geolocation") predict gCP({approximate})?
+  queryPredictsApprox() {
+    const q = this.queryGeo();
+    const b = this.gcpApproximate();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  // Does query("geolocation") predict gCP({precise})?
+  queryPredictsPrecise() {
+    const q = this.queryGeo();
+    const b = this.gcpPrecise();
+    if (q === "granted" && b.startsWith("returns")) return true;
+    if (q === "prompt" && b === "prompts user") return true;
+    if (q === "denied" && b.includes("throws")) return true;
+    return false;
+  },
+
+  onchangeFires(prevState, newState) {
+    // onchange on "geolocation" fires when the overall state changes
+    const prev = prevState === STATES.APPROX_ONLY || prevState === STATES.PRECISE;
+    const curr = newState === STATES.APPROX_ONLY || newState === STATES.PRECISE;
+    return prev !== curr;
+  }
+};
+
+function stateLabel(state) {
+  switch (state) {
+    case STATES.PROMPT: return "No decision (prompt)";
+    case STATES.APPROX_ONLY: return "Approximate only granted (State 5)";
+    case STATES.PRECISE: return "Precise granted (implies approximate)";
+    case STATES.DENIED: return "Denied all";
+    default: return state;
+  }
+}
+
+function setValueClass(el, value) {
+  el.textContent = value;
+  el.className = "result-value";
+  if (value.startsWith("granted") || value.startsWith("returns")) el.classList.add("granted");
+  else if (value === "prompt" || value === "prompts user") el.classList.add("prompt");
+  else if (value.includes("denied") || value.includes("throws")) el.classList.add("denied");
+  else if (value === "TypeError") el.classList.add("throws");
+  else if (value === "true" || value === "Yes") el.classList.add("true");
+  else if (value === "false" || value === "No") el.classList.add("false");
+}
+
+function setVerdict(el, pass) {
+  el.className = "verdict";
+  if (pass === true) { el.textContent = "PASS"; el.classList.add("verdict-pass"); }
+  else if (pass === false) { el.textContent = "FAIL"; el.classList.add("verdict-fail"); }
+  else if (pass === "weakened") { el.textContent = "WEAKENED"; el.classList.add("verdict-weakened"); }
+  else { el.textContent = "—"; el.classList.add("verdict-na"); }
+}
+
+function addEvent(logId, msg) {
+  const log = document.getElementById(logId);
+  const div = document.createElement("div");
+  div.className = "event";
+  div.textContent = msg;
+  log.prepend(div);
+}
+
+function updateAll(prevState) {
+  document.getElementById("user-state").textContent = stateLabel(userState);
+
+  // Highlight active button
+  document.querySelectorAll(".btn").forEach(b => b.classList.remove("active"));
+
+  // Panel 1: Backwards Compatibility
+  const r1tq = twoPermission.queryGeo();
+  const r1tg = twoPermission.gcpDefault();
+  const r1tp = twoPermission.queryPredictsDefault();
+  setValueClass(document.getElementById("r1-two-query"), r1tq);
+  setValueClass(document.getElementById("r1-two-gcp"), r1tg);
+  setValueClass(document.getElementById("r1-two-predicts"), r1tp ? "Yes" : "No");
+
+  const r1sq = singlePermission.queryGeo();
+  const r1sg = singlePermission.gcpDefault();
+  const r1sp = singlePermission.queryPredictsDefault();
+  setValueClass(document.getElementById("r1-single-query"), r1sq);
+  setValueClass(document.getElementById("r1-single-gcp"), r1sg);
+  setValueClass(document.getElementById("r1-single-predicts"), r1sp ? "Yes" : "No");
+
+  // Verdict for Panel 1
+  // Backwards compat passes if legacy behavior is identical to today
+  // Both models: legacy code uses default (precise), so State 5 matters
+  const v1two = r1tp; // query predicts legacy behavior
+  const v1single = r1sp;
+  setVerdict(document.getElementById("v1-two"), v1two);
+  // Single-permission: in State 5, query returns "granted" but legacy gCP prompts
+  setVerdict(document.getElementById("v1-single"), v1single ? true : "weakened");
+
+  // Panel 2: Approximate + Query
+  setValueClass(document.getElementById("r2-two-query-approx"), twoPermission.queryGeoApprox());
+  setValueClass(document.getElementById("r2-two-query-geo"), twoPermission.queryGeo());
+  setValueClass(document.getElementById("r2-two-gcp"), twoPermission.gcpApproximate());
+  const r2tp = twoPermission.queryPredictsApprox();
+  setValueClass(document.getElementById("r2-two-predicts"), r2tp ? "Yes" : "No");
+
+  setValueClass(document.getElementById("r2-single-query-geo"), singlePermission.queryGeo());
+  setValueClass(document.getElementById("r2-single-gcp"), singlePermission.gcpApproximate());
+  const r2sp = singlePermission.queryPredictsApprox();
+  setValueClass(document.getElementById("r2-single-predicts"), r2sp ? "Yes" : "No");
+
+  setVerdict(document.getElementById("v2-two"), r2tp);
+  setVerdict(document.getElementById("v2-single"), r2sp);
+
+  // onchange
+  if (prevState !== undefined) {
+    const twoFires = twoPermission.onchangeFires(prevState, userState);
+    const singleFires = singlePermission.onchangeFires(prevState, userState);
+    setValueClass(document.getElementById("r2-two-onchange"), twoFires ? "Yes" : "No");
+    setValueClass(document.getElementById("r2-single-onchange"), singleFires ? "Yes" : "No");
+    if (twoFires) addEvent("log-two", `onchange fired: "${twoPermission.queryGeoApprox()}" (geolocation-approximate)`);
+    if (singleFires) addEvent("log-single", `onchange fired: "${singlePermission.queryGeo()}" (geolocation)`);
+  }
+
+  // Panel 3: Upgrade Flow
+  setValueClass(document.getElementById("r3-two-query"), twoPermission.queryGeo());
+  setValueClass(document.getElementById("r3-two-gcp"), twoPermission.gcpPrecise());
+  const r3tp = twoPermission.queryPredictsPrecise();
+  setValueClass(document.getElementById("r3-two-predicts"), r3tp ? "Yes" : "No");
+  // Can developer show pre-prompt UI? Only if they can detect "will prompt"
+  const r3tPre = twoPermission.queryGeo() === "prompt" && twoPermission.gcpPrecise() === "prompts user";
+  setValueClass(document.getElementById("r3-two-preprompt"), r3tPre || r3tp ? "Yes" : "No");
+
+  setValueClass(document.getElementById("r3-single-query"), singlePermission.queryGeo());
+  setValueClass(document.getElementById("r3-single-gcp"), singlePermission.gcpPrecise());
+  const r3sp = singlePermission.queryPredictsPrecise();
+  setValueClass(document.getElementById("r3-single-predicts"), r3sp ? "Yes" : "No");
+  // Single-permission: in State 5, query returns "granted" but precise prompts
+  const r3sPre = singlePermission.queryGeo() === "prompt" && singlePermission.gcpPrecise() === "prompts user";
+  setValueClass(document.getElementById("r3-single-preprompt"), r3sPre || r3sp ? "Yes" : "No");
+
+  setVerdict(document.getElementById("v3-two"), r3tp);
+  setVerdict(document.getElementById("v3-single"), r3sp ? true : (userState === STATES.APPROX_ONLY ? false : true));
+
+  // Summary table
+  updateSummary();
+}
+
+function updateSummary() {
+  const scenarios = [
+    { state: STATES.PROMPT, label: "No decision" },
+    { state: STATES.APPROX_ONLY, label: "Approximate only (State 5)" },
+    { state: STATES.PRECISE, label: "Precise granted" },
+    { state: STATES.DENIED, label: "Denied" },
+  ];
+
+  const actions = [
+    { label: "gCP() [default/precise]", twoFn: "queryPredictsDefault", singleFn: "queryPredictsDefault" },
+    { label: "gCP({approximate})", twoFn: "queryPredictsApprox", singleFn: "queryPredictsApprox" },
+    { label: "gCP({precise})", twoFn: "queryPredictsPrecise", singleFn: "queryPredictsPrecise" },
+  ];
+
+  const savedState = userState;
+  const tbody = document.getElementById("summary-body");
+  tbody.innerHTML = "";
+
+  let twoFails = 0;
+  let singleFails = 0;
+
+  for (const scenario of scenarios) {
+    for (const action of actions) {
+      userState = scenario.state;
+      const twoResult = twoPermission[action.twoFn]();
+      const singleResult = singlePermission[action.singleFn]();
+      if (!twoResult) twoFails++;
+      if (!singleResult) singleFails++;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${scenario.label}</td>
+        <td>${action.label}</td>
+        <td style="color: ${twoResult ? "var(--pass)" : "var(--fail)"}">${twoResult ? "✓ Yes" : "✗ No"}</td>
+        <td style="color: ${singleResult ? "var(--pass)" : "var(--fail)"}">${singleResult ? "✓ Yes" : "✗ No"}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  userState = savedState;
+
+  document.getElementById("key-finding").innerHTML = `
+    <strong>Mode: ${legacyBehavior === "returns-approx" ? "Permissive" : "Strict"}</strong> (legacy gCP in State 5 ${legacyBehavior === "returns-approx" ? "returns approx position" : "prompts for precise"}).<br>
+    Two-Permission model: <strong>${12 - twoFails}/12</strong> predictions correct.
+    Single-Permission model: <strong>${12 - singleFails}/12</strong> predictions correct.
+    ${legacyBehavior === "returns-approx" ?
+      (twoFails > 0 ? `<br><span style="color:var(--fail)">Two-Permission FAILS:</span> State 5, gCP() default — query("geolocation")="prompt" but gCP() returns position without prompting.` : "") +
+      (singleFails > 0 ? `<br><span style="color:var(--fail)">Single-Permission FAILS:</span> State 5, gCP({precise}) — query("geolocation")="granted" but gCP({precise}) prompts.` : "")
+    :
+      (twoFails > 0 ? `<br><span style="color:var(--fail)">Two-Permission FAILS:</span> ${twoFails} prediction(s) incorrect.` : "") +
+      (singleFails > 0 ? `<br><span style="color:var(--fail)">Single-Permission FAILS:</span> State 5 — query="granted" but gCP({precise}) prompts AND query="granted" but legacy gCP() prompts.` : "")
+    }
+    <br><br><strong>Conclusion:</strong> ${
+      legacyBehavior === "returns-approx"
+        ? "Under permissive semantics, BOTH models have exactly 1 prediction failure in State 5, just on opposite sides. The two-permission model fails for legacy code; the single-permission model fails for the upgrade flow."
+        : "Under strict semantics, the two-permission model predicts all cases correctly (12/12). The single-permission model fails 2 predictions in State 5 (legacy default + precise upgrade)."
+    }
+  `;
+}
+
+// Event handlers
+document.querySelector(".btn-group").addEventListener("click", (e) => {
+  if (!e.target.matches(".btn")) return;
+  const action = e.target.dataset.action;
+  if (!action) return;
+  const prev = userState;
+
+  switch (action) {
+    case "reset": userState = STATES.PROMPT; break;
+    case "grant-approximate": userState = STATES.APPROX_ONLY; break;
+    case "grant-precise": userState = STATES.PRECISE; break;
+    case "deny": userState = STATES.DENIED; break;
+    case "revoke-precise": userState = STATES.APPROX_ONLY; break;
+    case "revoke-all": userState = STATES.PROMPT; break;
+  }
+
+  addEvent("log-two", `User action: ${action} → state: ${stateLabel(userState)}`);
+  addEvent("log-single", `User action: ${action} → state: ${stateLabel(userState)}`);
+  updateAll(prev);
+});
+
+// Legacy behavior toggle
+document.getElementById("legacy-behavior-group").addEventListener("click", (e) => {
+  if (!e.target.matches(".btn")) return;
+  const mode = e.target.dataset.legacy;
+  if (!mode) return;
+  legacyBehavior = mode;
+  document.querySelectorAll("#legacy-behavior-group .btn").forEach(b => b.classList.remove("active"));
+  e.target.classList.add("active");
+  updateAll();
+});
+
+// Initial render
+updateAll();
+</script>
+</body>
+</html>
