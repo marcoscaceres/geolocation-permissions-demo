@@ -159,6 +159,8 @@ h3 { font-size: 0.95rem; margin-bottom: 0.25rem; }
   margin-top: 0.5rem;
   font-style: italic;
 }
+.example { padding: 0.75rem; background: var(--bg); border-radius: 6px; }
+.example h3 { font-size: 0.9rem; margin-bottom: 0.5rem; }
 </style>
 </head>
 <body>
@@ -359,6 +361,98 @@ navigator.geolocation.getCurrentPosition(s, e, {accuracyMode: "precise"});</div>
     <p class="note">This is the crux: State 5 (approximate-only granted). Both models have a prediction gap here.</p>
   </div>
 
+</div>
+
+<!-- Runnable Examples -->
+<div class="panel" style="margin-top: 1.5rem;">
+  <h2>Runnable Examples (using mock APIs)</h2>
+  <p class="note" style="margin-bottom: 1rem;">These use the same mock state machine as the panels above. Click a user state button, then run an example to see the result live.</p>
+
+  <div class="example">
+    <h3>Example 1: Approximate-only site (weather app)</h3>
+    <div class="code-block">// A weather app only needs city-level location.
+// Under the single-permission model, this is all you need:
+const status = await navigator.permissions.query({name: "geolocation"});
+if (status.state === "granted" || status.state === "prompt") {
+  navigator.geolocation.getCurrentPosition(
+    pos => showWeather(pos.coords.latitude, pos.coords.longitude),
+    err => showManualEntry(),
+    { accuracyMode: "approximate" }
+  );
+}
+// The site never asks about accuracy tiers. It declares what it needs
+// and handles the result. Works identically under both models.</div>
+    <button class="btn" id="run-example-1">Run with current state</button>
+    <div class="event-log" id="example-1-output"></div>
+  </div>
+
+  <div class="example" style="margin-top: 1rem;">
+    <h3>Example 2: Upgrade flow (ride-sharing app)</h3>
+    <div class="code-block">// Start with approximate (show nearby drivers),
+// then upgrade to precise (pickup location).
+//
+// Step 1: Get approximate
+navigator.geolocation.getCurrentPosition(
+  pos => showNearbyDrivers(pos),
+  err => showManualAddress(),
+  { accuracyMode: "approximate" }
+);
+
+// Step 2: Later, when user taps "Set pickup location"
+navigator.geolocation.getCurrentPosition(
+  pos => setPrecisePickup(pos),
+  err => handleError(err),
+  { accuracyMode: "precise" }
+);
+// If only approximate was granted, this prompts. That's fine —
+// the user tapped a button, they expect interaction.
+// This is the SAME pattern as enableHighAccuracy today.</div>
+    <button class="btn" id="run-example-2">Run with current state</button>
+    <div class="event-log" id="example-2-output"></div>
+  </div>
+
+  <div class="example" style="margin-top: 1rem;">
+    <h3>Example 3: The enableHighAccuracy precedent</h3>
+    <div class="code-block">// TODAY, this is already how the API works:
+const status = await navigator.permissions.query({name: "geolocation"});
+// status.state === "granted"
+
+navigator.geolocation.getCurrentPosition(success, error, {
+  enableHighAccuracy: true  // A HINT. No separate queryable permission.
+});
+// The UA might return low-accuracy position anyway (no GPS, indoor, etc.)
+// There's no query({name: "geolocation-high-accuracy"}).
+// There's no coords.wasHighAccuracy result attribute.
+// The developer checks coords.accuracy and adapts.
+//
+// accuracyMode is architecturally the same kind of thing:
+// a caller-side declaration of what accuracy the site needs.</div>
+    <button class="btn" id="run-example-3">Run with current state</button>
+    <div class="event-log" id="example-3-output"></div>
+  </div>
+
+  <div class="example" style="margin-top: 1rem;">
+    <h3>Example 4: The privacy argument</h3>
+    <div class="code-block">// Two-permission model allows this ON PAGE LOAD, no user gesture:
+const approx = await navigator.permissions.query({name: "geolocation-approximate"});
+const precise = await navigator.permissions.query({name: "geolocation"});
+
+if (approx.state === "granted" && precise.state === "prompt") {
+  // SILENTLY learned: "user specifically chose approximate-only"
+  // No prompt shown. No user awareness. Any 3rd-party script can do this.
+  // This enables: nag UIs, A/B experiments on privacy-choosing users,
+  // content gating ("precise location required for this feature").
+  trackUserPrivacyPreference("approximate-only"); // dark pattern
+}
+
+// Single-permission model: only query("geolocation") exists.
+// Returns "granted" — site knows SOME access exists.
+// Can't distinguish "user chose approximate" from "precise granted."
+// The user's privacy preference is revealed only via coords.accuracy
+// AFTER an active API call (user participated in the disclosure).</div>
+    <button class="btn" id="run-example-4">Run with current state</button>
+    <div class="event-log" id="example-4-output"></div>
+  </div>
 </div>
 
 <!-- Event Log -->
@@ -790,6 +884,108 @@ document.getElementById("legacy-behavior-group").addEventListener("click", (e) =
   document.querySelectorAll("#legacy-behavior-group .btn").forEach(b => b.classList.remove("active"));
   e.target.classList.add("active");
   updateAll();
+});
+
+// Runnable examples
+function logTo(id, msg) {
+  const el = document.getElementById(id);
+  const div = document.createElement("div");
+  div.className = "event";
+  div.textContent = msg;
+  el.prepend(div);
+}
+
+document.getElementById("run-example-1").addEventListener("click", () => {
+  const out = "example-1-output";
+  document.getElementById(out).innerHTML = "";
+  const q = singlePermission.queryGeo();
+  logTo(out, `query("geolocation") → "${q}"`);
+  if (q === "granted" || q === "prompt") {
+    const result = singlePermission.gcpApproximate();
+    logTo(out, `getCurrentPosition({approximate}) → ${result}`);
+    if (result.startsWith("returns")) {
+      logTo(out, `✓ Site gets position. Shows weather for approximate area.`);
+    } else if (result === "prompts user") {
+      logTo(out, `⋯ Browser shows permission prompt to user.`);
+    } else {
+      logTo(out, `✗ ${result}`);
+    }
+  } else {
+    logTo(out, `→ state is "denied". Show manual city entry.`);
+  }
+});
+
+document.getElementById("run-example-2").addEventListener("click", () => {
+  const out = "example-2-output";
+  document.getElementById(out).innerHTML = "";
+  logTo(out, `— Step 1: Request approximate —`);
+  const approxResult = singlePermission.gcpApproximate();
+  logTo(out, `getCurrentPosition({approximate}) → ${approxResult}`);
+  if (approxResult.startsWith("returns")) {
+    logTo(out, `✓ Got approximate position. Showing nearby drivers.`);
+  } else {
+    logTo(out, `⋯ ${approxResult}`);
+  }
+  logTo(out, ``);
+  logTo(out, `— Step 2: User taps "Set pickup location" —`);
+  const preciseResult = singlePermission.gcpPrecise();
+  logTo(out, `getCurrentPosition({precise}) → ${preciseResult}`);
+  if (preciseResult.startsWith("returns")) {
+    logTo(out, `✓ Got precise position. Setting pickup pin.`);
+  } else if (preciseResult === "prompts user") {
+    logTo(out, `⋯ Browser prompts for precise access. User tapped a button — they expect interaction.`);
+    logTo(out, `   This is the same pattern as enableHighAccuracy: call the API, handle the result.`);
+  } else {
+    logTo(out, `✗ ${preciseResult}`);
+  }
+});
+
+document.getElementById("run-example-3").addEventListener("click", () => {
+  const out = "example-3-output";
+  document.getElementById(out).innerHTML = "";
+  const q = singlePermission.queryGeo();
+  logTo(out, `query("geolocation") → "${q}"`);
+  logTo(out, `getCurrentPosition({enableHighAccuracy: true}) → same as precise request`);
+  const result = singlePermission.gcpPrecise();
+  logTo(out, `Actual behavior: ${result}`);
+  if (q === "granted" && result === "prompts user") {
+    logTo(out, `⚠ query said "granted" but the precise/highAccuracy call prompts.`);
+    logTo(out, `  This is the "State 5 gap" — but it's the SAME gap that exists today`);
+    logTo(out, `  with enableHighAccuracy. No one has ever required a separate`);
+    logTo(out, `  query({name: "geolocation-high-accuracy"}) to solve it.`);
+  } else {
+    logTo(out, `✓ query correctly predicted API behavior.`);
+  }
+});
+
+document.getElementById("run-example-4").addEventListener("click", () => {
+  const out = "example-4-output";
+  document.getElementById(out).innerHTML = "";
+  logTo(out, `— Two-permission model (what a 3rd-party script can do): —`);
+  const approx = twoPermission.queryGeoApprox();
+  const precise = twoPermission.queryGeo();
+  logTo(out, `query("geolocation-approximate") → "${approx}"`);
+  logTo(out, `query("geolocation") → "${precise}"`);
+  if (approx === "granted" && precise === "prompt") {
+    logTo(out, `⚠ SILENTLY LEARNED: user chose approximate-only.`);
+    logTo(out, `  No prompt. No user gesture. Any script on the page gets this.`);
+    logTo(out, `  Compounds w3c/permissions#52 (open since 2015).`);
+  } else if (approx === "granted" && precise === "granted") {
+    logTo(out, `  Site knows: precise access granted.`);
+  } else {
+    logTo(out, `  State: approx="${approx}", precise="${precise}"`);
+  }
+  logTo(out, ``);
+  logTo(out, `— Single-permission model: —`);
+  const single = singlePermission.queryGeo();
+  logTo(out, `query("geolocation") → "${single}"`);
+  logTo(out, `query("geolocation-approximate") → TypeError (not queryable)`);
+  if (single === "granted") {
+    logTo(out, `  Site knows: SOME access exists. Cannot distinguish approximate from precise.`);
+    logTo(out, `  User's accuracy preference revealed only via coords.accuracy AFTER active API call.`);
+  } else {
+    logTo(out, `  Site knows: state is "${single}".`);
+  }
 });
 
 // Initial render
