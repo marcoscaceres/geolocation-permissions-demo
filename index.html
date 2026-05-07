@@ -31,7 +31,7 @@
   <aside class="finding-callout">
     <p><strong>The finding:</strong> under the more backwards-compatible interpretation ("permissive"), both models behave differently when the user has granted only approximate access (State 5):</p>
     <ul>
-      <li><strong>Chromium's model misleads legacy code:</strong> <code>query({name: "geolocation"})</code> returns <code>"prompt"</code>, implying you need to ask, but <code>getCurrentPosition()</code> succeeds without prompting (because the user already granted approximate). Legacy sites would needlessly show "share location" UI.</li>
+      <li><strong>Chromium's model gives a stale signal to legacy code:</strong> <code>query({name: "geolocation"})</code> returns <code>"prompt"</code>, implying the site needs to ask, but <code>getCurrentPosition()</code> succeeds without prompting (because the user already granted approximate). Legacy sites would needlessly show "share location" UI.</li>
       <li><strong>WebKit's model requires re-consent for upgrade:</strong> <code>query({name: "geolocation"})</code> returns <code>"granted"</code> (you have access), and if you call <code>getCurrentPosition({accuracyMode: "precise"})</code>, the browser asks for precise. This is consent working as intended: the user granted one level, the site wants more, so the user is asked again.</li>
     </ul>
   </aside>
