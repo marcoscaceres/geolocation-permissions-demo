@@ -44,9 +44,9 @@ navigator.geolocation.getCurrentPosition(
 );</code></pre>
     <output class="results-strip" id="c1-strip">
       <dl>
-        <dt>Chromium proposal (two names):</dt>
+        <dt>Chromium proposal (two permissions):</dt>
         <dd><code id="c1-two-query">—</code> → <code id="c1-two-gcp">—</code></dd>
-        <dt>WebKit proposal (one name):</dt>
+        <dt>WebKit proposal (one permission):</dt>
         <dd><code id="c1-single-query">—</code> → <code id="c1-single-gcp">—</code></dd>
       </dl>
       <p class="verdict-line" id="c1-verdict"></p>
@@ -66,9 +66,9 @@ navigator.geolocation.getCurrentPosition(
 );</code></pre>
     <output class="results-strip" id="c2-strip">
       <dl>
-        <dt>Chromium proposal (two names):</dt>
+        <dt>Chromium proposal (two permissions):</dt>
         <dd><code id="c2-two-approx">—</code> then <code id="c2-two-precise">—</code></dd>
-        <dt>WebKit proposal (one name):</dt>
+        <dt>WebKit proposal (one permission):</dt>
         <dd><code id="c2-single-approx">—</code> then <code id="c2-single-precise">—</code></dd>
       </dl>
       <p class="verdict-line" id="c2-verdict"></p>
@@ -87,9 +87,9 @@ navigator.geolocation.getCurrentPosition(success, error, {
 });</code></pre>
     <output class="results-strip" id="c3-strip">
       <dl>
-        <dt>Chromium proposal (two names):</dt>
+        <dt>Chromium proposal (two permissions):</dt>
         <dd><code id="c3-two-query">—</code> → <code id="c3-two-gcp">—</code></dd>
-        <dt>WebKit proposal (one name):</dt>
+        <dt>WebKit proposal (one permission):</dt>
         <dd><code id="c3-single-query">—</code> → <code id="c3-single-gcp">—</code></dd>
       </dl>
       <p class="verdict-line" id="c3-verdict"></p>
@@ -111,9 +111,9 @@ if (approx.state === "granted" &amp;&amp; precise.state === "prompt") {
 }</code></pre>
     <output class="results-strip" id="c4-strip">
       <dl>
-        <dt>Chromium proposal (two names):</dt>
+        <dt>Chromium proposal (two permissions):</dt>
         <dd>approx: <code id="c4-two-approx">—</code> + precise: <code id="c4-two-geo">—</code></dd>
-        <dt>WebKit proposal (one name):</dt>
+        <dt>WebKit proposal (one permission):</dt>
         <dd>geolocation: <code id="c4-single-geo">—</code> <small>(only queryable)</small></dd>
       </dl>
       <p class="verdict-line" id="c4-verdict"></p>
