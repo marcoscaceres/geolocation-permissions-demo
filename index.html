@@ -102,8 +102,12 @@ navigator.geolocation.getCurrentPosition(success, error);</code></pre>
       </div>
     </header>
     <pre class="code-block"><code class="language-javascript">// Approximate-only site
-const status = await permissions.query({name: "geolocation-approximate"}); // or "geolocation"
-navigator.geolocation.getCurrentPosition(s, e, {accuracyMode: "approximate"});</code></pre>
+const status = await permissions.query({
+  name: "geolocation-approximate" // or "geolocation"
+});
+navigator.geolocation.getCurrentPosition(
+  s, e, {accuracyMode: "approximate"}
+);</code></pre>
     <section class="comparison">
       <section class="model-col">
         <h3>Two-Permission (Chromium)</h3>
@@ -230,16 +234,19 @@ navigator.geolocation.getCurrentPosition(s, e, {accuracyMode: "precise"});</code
     <h3>Example 1: Approximate-only site (weather app)</h3>
     <pre class="code-block"><code class="language-javascript">// A weather app only needs city-level location.
 // Under the single-permission model, this is all you need:
-const status = await navigator.permissions.query({name: "geolocation"});
+const status = await navigator.permissions.query({
+  name: "geolocation"
+});
 if (status.state === "granted" || status.state === "prompt") {
   navigator.geolocation.getCurrentPosition(
-    pos => showWeather(pos.coords.latitude, pos.coords.longitude),
+    pos => showWeather(pos.coords),
     err => showManualEntry(),
-    { accuracyMode: "approximate" }
+    {accuracyMode: "approximate"}
   );
 }
-// The site never asks about accuracy tiers. It declares what it needs
-// and handles the result. Works identically under both models.</code></pre>
+// The site never asks about accuracy tiers.
+// It declares what it needs and handles the result.
+// Works identically under both models.</code></pre>
     <button class="btn" id="run-example-1">Run with current state</button>
     <output class="event-log" id="example-1-output"></output>
   </article>
@@ -272,13 +279,15 @@ navigator.geolocation.getCurrentPosition(
   <article class="example">
     <h3>Example 3: The enableHighAccuracy precedent</h3>
     <pre class="code-block"><code class="language-javascript">// TODAY, this is already how the API works:
-const status = await navigator.permissions.query({name: "geolocation"});
+const status = await navigator.permissions.query({
+  name: "geolocation"
+});
 // status.state === "granted"
 
 navigator.geolocation.getCurrentPosition(success, error, {
-  enableHighAccuracy: true  // A HINT. No separate queryable permission.
+  enableHighAccuracy: true // A HINT. No separate queryable permission.
 });
-// The UA might return low-accuracy position anyway (no GPS, indoor, etc.)
+// The UA might return low-accuracy anyway (no GPS, indoor, etc.)
 // There's no query({name: "geolocation-high-accuracy"}).
 // There's no coords.wasHighAccuracy result attribute.
 // The developer checks coords.accuracy and adapts.
@@ -291,14 +300,18 @@ navigator.geolocation.getCurrentPosition(success, error, {
 
   <article class="example">
     <h3>Example 4: The privacy argument</h3>
-    <pre class="code-block"><code class="language-javascript">// Two-permission model allows this ON PAGE LOAD, no user gesture:
-const approx = await navigator.permissions.query({name: "geolocation-approximate"});
-const precise = await navigator.permissions.query({name: "geolocation"});
+    <pre class="code-block"><code class="language-javascript">// Two-permission model allows this ON PAGE LOAD:
+const approx = await navigator.permissions.query({
+  name: "geolocation-approximate"
+});
+const precise = await navigator.permissions.query({
+  name: "geolocation"
+});
 
-if (approx.state === "granted" && precise.state === "prompt") {
-  // SILENTLY learned: "user specifically chose approximate-only"
-  // No prompt shown. No user awareness. Any 3rd-party script can do this.
-  // This enables: nag UIs, A/B experiments on privacy-choosing users,
+if (approx.state === "granted" &amp;&amp; precise.state === "prompt") {
+  // SILENTLY learned: "user chose approximate-only"
+  // No prompt. No user gesture. Any 3rd-party script can do this.
+  // Enables: nag UIs, A/B experiments on privacy-choosing users,
   // content gating ("precise location required for this feature").
   trackUserPrivacyPreference("approximate-only"); // dark pattern
 }
@@ -306,8 +319,8 @@ if (approx.state === "granted" && precise.state === "prompt") {
 // Single-permission model: only query({name: "geolocation"}) exists.
 // Returns "granted" — site knows SOME access exists.
 // Can't distinguish "user chose approximate" from "precise granted."
-// The user's privacy preference is revealed only via coords.accuracy
-// AFTER an active API call (user participated in the disclosure).</code></pre>
+// User's privacy preference revealed only via coords.accuracy
+// AFTER an active API call (user participated in disclosure).</code></pre>
     <button class="btn" id="run-example-4">Run with current state</button>
     <output class="event-log" id="example-4-output"></output>
   </article>
