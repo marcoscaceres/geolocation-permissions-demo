@@ -52,30 +52,34 @@ body {
 }
 
 /* Segmented buttons */
-.state-buttons,
-.legacy-toggle {
+.state-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-.state-buttons {
-  background: var(--surface2);
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--border);
+.state-buttons .toggle-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .state-buttons .seg-btn {
-  border: none;
-  border-right: 1px solid var(--border);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-right: none;
   border-radius: 0;
   padding: 0.35rem 0.9rem;
   font-size: 0.85rem;
 }
 
-.state-buttons .seg-btn:last-child {
-  border-right: none;
+.state-buttons .seg-btn:first-of-type {
+  border-radius: 6px 0 0 6px;
+}
+
+.state-buttons .seg-btn:last-of-type {
+  border-radius: 0 6px 6px 0;
+  border-right: 1px solid var(--border);
 }
 
 .legacy-toggle {
