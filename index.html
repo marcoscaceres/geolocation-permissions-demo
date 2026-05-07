@@ -22,25 +22,6 @@
         <button class="seg-btn" data-state="precise">Precise</button>
         <button class="seg-btn" data-state="denied">Denied</button>
       </fieldset>
-      <fieldset
-        class="legacy-toggle"
-        aria-label="What happens when a site without accuracyMode calls getCurrentPosition and only the geolocation-approximate permission was granted?"
-      >
-        <label
-          class="toggle-label"
-          title="When the user granted the 'geolocation-approximate' permission and a site without accuracyMode calls getCurrentPosition(), what happens?"
-          >Site without accuracyMode:</label
-        >
-        <button
-          class="seg-btn seg-btn--small active"
-          data-legacy="returns-approx"
-        >
-          Gets approximate position
-        </button>
-        <button class="seg-btn seg-btn--small" data-legacy="prompts-precise">
-          Gets prompted again
-        </button>
-      </fieldset>
     </nav>
 
     <header class="hero">
@@ -725,12 +706,7 @@ status.onchange = () => {
 
         userState = savedState;
 
-        const modeLabel =
-          legacyBehavior === "returns-approx"
-            ? "Returns approximate"
-            : "Prompts for precise";
         document.getElementById("summary-score").innerHTML =
-          `Legacy behavior: <strong>${modeLabel}</strong> — ` +
           `Chromium (two permissions): <strong>${twoPass}/12</strong> predictions. ` +
           `WebKit (one permission): <strong>${singlePass}/12</strong> predictions. ` +
           `<br><small>Note: higher prediction accuracy is not inherently better. The inability to predict may mean third-party scripts cannot passively observe user choices.</small>`;
@@ -744,20 +720,6 @@ status.onchange = () => {
           const state = e.target.dataset.state;
           if (!state) return;
           userState = state;
-          updateAll();
-        });
-
-      // Sticky bar: legacy behavior toggle
-      document
-        .querySelector(".legacy-toggle")
-        .addEventListener("click", (e) => {
-          if (!e.target.matches(".seg-btn")) return;
-          const mode = e.target.dataset.legacy;
-          if (!mode) return;
-          legacyBehavior = mode;
-          document.querySelectorAll(".legacy-toggle .seg-btn").forEach((b) => {
-            b.classList.toggle("active", b.dataset.legacy === mode);
-          });
           updateAll();
         });
 

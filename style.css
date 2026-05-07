@@ -45,11 +45,8 @@ body {
   max-width: 900px;
   margin: 0 auto;
   padding: 0.6rem 1.5rem;
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
 }
 
 /* Segmented buttons */
