@@ -276,9 +276,6 @@ main {
   font-size: 0.83rem;
   margin: 0;
 }
-  min-width: 130px;
-  flex-shrink: 0;
-}
 
 .results-strip dd {
   display: flex;
