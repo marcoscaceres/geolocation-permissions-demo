@@ -24,11 +24,11 @@
       </fieldset>
       <fieldset
         class="legacy-toggle"
-        aria-label="What happens when a site without accuracyMode calls getCurrentPosition and only approximate was granted?"
+        aria-label="What happens when a site without accuracyMode calls getCurrentPosition and only the geolocation-approximate permission was granted?"
       >
         <label
           class="toggle-label"
-          title="When user granted approximate and a site without accuracyMode calls getCurrentPosition(), what happens?"
+          title="When the user granted the 'geolocation-approximate' permission and a site without accuracyMode calls getCurrentPosition(), what happens?"
           >Site without accuracyMode:</label
         >
         <button
@@ -67,7 +67,7 @@
         <p>
           <strong>The finding:</strong> under the "returns approximate"
           interpretation, both models behave differently when the user has
-          granted only approximate access (State 5):
+          granted the <code>"geolocation-approximate"</code> permission:
         </p>
         <ul>
           <li>
@@ -78,7 +78,7 @@
             <code>query({name: "geolocation"})</code> reflects that precise has
             not been granted). However,
             <code>getCurrentPosition()</code> succeeds without prompting because
-            approximate access exists. Legacy sites would show unnecessary
+            the <code>"geolocation-approximate"</code> permission was granted. Legacy sites would show unnecessary
             "share location" UI.
           </li>
           <li>
@@ -132,10 +132,10 @@ navigator.geolocation.getCurrentPosition(
           A ride-sharing app starts with approximate location (show nearby
           drivers), then requests precise when the user taps "Set pickup
           location." In both models, the approximate call succeeds. The precise
-          call prompts in State 5 because only approximate was granted. The
-          difference: under the two-permission model, the developer can predict
-          this prompt via <code>query()</code>. Under the single-permission
-          model, they call the API and handle the result.
+          call prompts when only <code>"geolocation-approximate"</code> was
+          granted. The difference: under the two-permission model, the developer
+          can predict this prompt via <code>query()</code>. Under the
+          single-permission model, they call the API and handle the result.
         </p>
         <pre
           class="code-block"
