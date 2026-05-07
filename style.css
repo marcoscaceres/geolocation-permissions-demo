@@ -144,6 +144,34 @@ body {
   margin-bottom: 0.75rem;
 }
 
+.finding-callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.finding-callout ul {
+  margin-top: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.finding-callout li {
+  margin-bottom: 0.4rem;
+}
+
+.finding-callout code {
+  background: var(--surface2);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-size: 0.88em;
+  color: var(--accent);
+}
+
 .thesis code {
   background: var(--surface2);
   padding: 0.1em 0.35em;

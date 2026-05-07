@@ -26,8 +26,15 @@
 
 <header class="hero">
   <h1>Approximate Geolocation: Permissions Model Comparison</h1>
-  <p class="thesis"><a href="https://github.com/w3c/geolocation/pull/195" class="ext-link">PR #195</a> adds approximate location support to the Geolocation API. Both sides agree on <code>PositionOptions.accuracyMode</code> (letting sites declare what accuracy they need). The remaining question: should <code>"geolocation-approximate"</code> be a separate queryable permission via <code>permissions.query()</code>?</p>
-  <p class="thesis">This demo tests both models against real developer patterns. Toggle the permission state above to see how each model behaves. The finding: under the more backwards-compatible interpretation, both models have exactly one prediction failure, on opposite sides.</p>
+  <p class="thesis"><a href="https://github.com/w3c/geolocation/pull/195" class="ext-link">PR #195</a> adds approximate location support to the Geolocation API. Both sides agree on letting developers pass <code>{accuracyMode: "approximate"}</code> to <code>getCurrentPosition()</code> to declare what accuracy they need. The remaining question: should <code>"geolocation-approximate"</code> be a separately queryable permission via <code>permissions.query()</code>?</p>
+  <p class="thesis">This demo tests both models against real developer patterns. Toggle the permission state above to see how each model behaves.</p>
+  <aside class="finding-callout">
+    <p><strong>The finding:</strong> under the more backwards-compatible interpretation ("permissive"), both models have exactly one prediction failure when the user has granted only approximate access (State 5), but on opposite sides:</p>
+    <ul>
+      <li><strong>Chromium's model fails for legacy code:</strong> <code>query({name: "geolocation"})</code> returns <code>"prompt"</code>, but <code>getCurrentPosition()</code> succeeds without prompting (because the user already granted approximate).</li>
+      <li><strong>WebKit's model fails for the upgrade flow:</strong> <code>query({name: "geolocation"})</code> returns <code>"granted"</code>, but <code>getCurrentPosition({accuracyMode: "precise"})</code> still prompts (because only approximate was granted).</li>
+    </ul>
+  </aside>
 </header>
 
 <main>
