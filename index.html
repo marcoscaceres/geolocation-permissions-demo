@@ -39,9 +39,7 @@
   name: "geolocation"
 });
 navigator.geolocation.getCurrentPosition(
-  pos => showWeather(pos.coords),
-  err => showManualEntry(),
-  {accuracyMode: "approximate"}
+  showWeather, showManualEntry, {accuracyMode: "approximate"}
 );</code></pre>
     <output class="results-strip" id="c1-strip">
       <dl>
@@ -59,15 +57,11 @@ navigator.geolocation.getCurrentPosition(
     <h2>Upgrade Flow</h2>
     <p class="card-prose">A ride-sharing app starts with approximate location to show nearby drivers, then upgrades to precise when the user taps "Set pickup location." The user initiated the action; they expect interaction. The developer doesn't need to predict whether a prompt will appear — they call the API and handle the result. This is the same pattern as <code>getUserMedia()</code>.</p>
     <pre class="code-block"><code class="language-javascript">navigator.geolocation.getCurrentPosition(
-  pos => showNearbyDrivers(pos),
-  err => showManualAddress(),
-  {accuracyMode: "approximate"}
+  showNearbyDrivers, showManualAddress, {accuracyMode: "approximate"}
 );
 
 navigator.geolocation.getCurrentPosition(
-  pos => setPrecisePickup(pos),
-  err => handleError(err),
-  {accuracyMode: "precise"}
+  setPrecisePickup, handleError, {accuracyMode: "precise"}
 );</code></pre>
     <output class="results-strip" id="c2-strip">
       <dl>
