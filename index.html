@@ -63,7 +63,7 @@ navigator.geolocation.getCurrentPosition(
   <!-- Card 2: Upgrade Flow -->
   <article class="card" id="card-2">
     <h2>Upgrade Flow</h2>
-    <p class="card-prose">A ride-sharing app starts with approximate location to show nearby drivers, then upgrades to precise when the user taps "Set pickup location." The user initiated the action; they expect interaction. The developer doesn't need to predict whether a prompt will appear — they call the API and handle the result. This is the same pattern as <code>getUserMedia()</code>.</p>
+    <p class="card-prose">A ride-sharing app starts with approximate location (show nearby drivers), then requests precise when the user taps "Set pickup location." In both models, the approximate call succeeds. The precise call prompts in State 5 because only approximate was granted. The difference: under the two-permission model, the developer can predict this prompt via <code>query()</code>. Under the single-permission model, they call the API and handle the result.</p>
     <pre class="code-block"><code class="language-javascript">navigator.geolocation.getCurrentPosition(
   showNearbyDrivers, showManualAddress, {accuracyMode: "approximate"}
 );
@@ -85,7 +85,7 @@ navigator.geolocation.getCurrentPosition(
   <!-- Card 3: enableHighAccuracy Precedent -->
   <article class="card" id="card-3">
     <h2>The <code>enableHighAccuracy</code> Precedent</h2>
-    <p class="card-prose">Today, <code>enableHighAccuracy</code> is a <code>PositionOptions</code> hint with no separate queryable permission and no result attribute reporting what the UA did. <code>query({name: "geolocation"})</code> returning <code>"granted"</code> has never guaranteed high-accuracy results. The developer checks <code>coords.accuracy</code> and adapts. <code>accuracyMode</code> is architecturally the same kind of thing.</p>
+    <p class="card-prose">Today, <code>enableHighAccuracy</code> is a <code>PositionOptions</code> hint with no separate queryable permission and no result attribute reporting what the UA did. <code>query({name: "geolocation"})</code> returning <code>"granted"</code> has never guaranteed high-accuracy results. The developer checks <code>coords.accuracy</code> after the call. This is the existing precedent for how option hints interact with the permission model.</p>
     <pre class="code-block"><code class="language-javascript">const status = await navigator.permissions.query({
   name: "geolocation"
 });
@@ -103,10 +103,10 @@ navigator.geolocation.getCurrentPosition(success, error, {
     </output>
   </article>
 
-  <!-- Card 4: The Privacy Cost -->
+  <!-- Card 4: Passive Queryability -->
   <article class="card" id="card-4">
-    <h2>The Privacy Cost</h2>
-    <p class="card-prose">Under the two-permission model, any third-party script can silently learn the user's accuracy preference on page load without a user gesture. This compounds the concern raised in <a href="https://github.com/w3c/permissions/issues/52" class="ext-link">w3c/permissions#52</a> (open since 2015). The single-permission model doesn't leak this choice.</p>
+    <h2>Passive Queryability</h2>
+    <p class="card-prose">Under the two-permission model, a script can determine whether the user chose approximate-only by querying both permission names on page load, without calling <code>getCurrentPosition()</code> and without a user gesture. Under the single-permission model, only <code>"geolocation"</code> is queryable, so this distinction is not observable until the API is actually called. See <a href="https://github.com/w3c/permissions/issues/52" class="ext-link">w3c/permissions#52</a> for background on passive queryability concerns.</p>
     <pre class="code-block"><code class="language-javascript">const approx = await navigator.permissions.query({
   name: "geolocation-approximate"
 });
