@@ -47,24 +47,31 @@
       </p>
       <aside class="finding-callout">
         <p>
-          <strong>The finding:</strong> under the "returns approximate"
-          interpretation, both models behave differently when the user has
-          granted the <code>"geolocation-approximate"</code> permission:
+          <strong>The finding:</strong> when the user has granted the
+          <code>"geolocation-approximate"</code> permission (set the toggle
+          above to "granted (approximate)"), what happens if a site calls
+          <code>getCurrentPosition()</code> without specifying
+          <code>accuracyMode</code>? We assume the UA returns approximate data
+          rather than re-prompting (since the user already consented to sharing
+          location). Under that assumption, both models behave differently:
         </p>
         <ul>
           <li>
             <strong
-              >Chromium's model returns "prompt" for the bare query</strong
+              >Chromium's model returns "prompt" for
+              <code>query({name: "geolocation"})</code></strong
             >
-            (conservative: it treats legacy code as requesting precise, so
-            <code>query({name: "geolocation"})</code> reflects that precise has
-            not been granted). However,
+            (conservative: it treats code without <code>accuracyMode</code> as
+            requesting precise, so the query reflects that precise has not been
+            granted). However,
             <code>getCurrentPosition()</code> succeeds without prompting because
             the <code>"geolocation-approximate"</code> permission was granted. Legacy sites would show unnecessary
             "share location" UI.
           </li>
           <li>
-            <strong>WebKit's model returns "granted" for the bare query</strong>
+            <strong>WebKit's model returns "granted" for
+              <code>query({name: "geolocation"})</code></strong
+            >
             (the user has granted some level of access). If the site then calls
             <code>getCurrentPosition({accuracyMode: "precise"})</code>, the
             browser prompts because the user is being asked to share more than
@@ -115,9 +122,10 @@ navigator.geolocation.getCurrentPosition(
           drivers), then requests precise when the user taps "Set pickup
           location." In both models, the approximate call succeeds. The precise
           call prompts when only <code>"geolocation-approximate"</code> was
-          granted. The difference: under the two-permission model, the developer
-          can predict this prompt via <code>query()</code>. Under the
-          single-permission model, they call the API and handle the result.
+          granted, because the user is being asked for more. The difference:
+          under the two-permission model, the developer can predict this prompt
+          via <code>query()</code>. Under the single-permission model, they call
+          the API and handle the result.
         </p>
         <pre
           class="code-block"
@@ -567,7 +575,7 @@ status.onchange = () => {
           document.getElementById("c2-verdict"),
           c2bothWork ? true : null,
           c2bothWork
-            ? "Both models support this pattern. A prompt in State 5 is expected — the user tapped a button."
+            ? "Both models support this pattern. A prompt is expected when only approximate was granted — the user tapped a button to request more."
             : userState === STATES.DENIED
               ? "Denied: both models reject the request correctly."
               : "Models diverge.",
