@@ -140,6 +140,7 @@ body {
   color: var(--muted);
   max-width: 70ch;
   line-height: 1.7;
+  margin-bottom: 0.75rem;
 }
 
 .thesis code {
