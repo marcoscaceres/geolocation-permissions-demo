@@ -44,9 +44,9 @@ navigator.geolocation.getCurrentPosition(
 );</code></pre>
     <output class="results-strip" id="c1-strip">
       <dl>
-        <dt>Two-Permission:</dt>
+        <dt>Chromium proposal (two names):</dt>
         <dd><code id="c1-two-query">—</code> → <code id="c1-two-gcp">—</code></dd>
-        <dt>Single-Permission:</dt>
+        <dt>WebKit proposal (one name):</dt>
         <dd><code id="c1-single-query">—</code> → <code id="c1-single-gcp">—</code></dd>
       </dl>
       <p class="verdict-line" id="c1-verdict"></p>
@@ -66,9 +66,9 @@ navigator.geolocation.getCurrentPosition(
 );</code></pre>
     <output class="results-strip" id="c2-strip">
       <dl>
-        <dt>Two-Permission:</dt>
+        <dt>Chromium proposal (two names):</dt>
         <dd><code id="c2-two-approx">—</code> then <code id="c2-two-precise">—</code></dd>
-        <dt>Single-Permission:</dt>
+        <dt>WebKit proposal (one name):</dt>
         <dd><code id="c2-single-approx">—</code> then <code id="c2-single-precise">—</code></dd>
       </dl>
       <p class="verdict-line" id="c2-verdict"></p>
@@ -87,9 +87,9 @@ navigator.geolocation.getCurrentPosition(success, error, {
 });</code></pre>
     <output class="results-strip" id="c3-strip">
       <dl>
-        <dt>Two-Permission:</dt>
+        <dt>Chromium proposal (two names):</dt>
         <dd><code id="c3-two-query">—</code> → <code id="c3-two-gcp">—</code></dd>
-        <dt>Single-Permission:</dt>
+        <dt>WebKit proposal (one name):</dt>
         <dd><code id="c3-single-query">—</code> → <code id="c3-single-gcp">—</code></dd>
       </dl>
       <p class="verdict-line" id="c3-verdict"></p>
@@ -111,9 +111,9 @@ if (approx.state === "granted" &amp;&amp; precise.state === "prompt") {
 }</code></pre>
     <output class="results-strip" id="c4-strip">
       <dl>
-        <dt>Two-Permission:</dt>
+        <dt>Chromium proposal (two names):</dt>
         <dd>approx: <code id="c4-two-approx">—</code> + precise: <code id="c4-two-geo">—</code></dd>
-        <dt>Single-Permission:</dt>
+        <dt>WebKit proposal (one name):</dt>
         <dd>geolocation: <code id="c4-single-geo">—</code> <small>(only queryable)</small></dd>
       </dl>
       <p class="verdict-line" id="c4-verdict"></p>
@@ -179,7 +179,7 @@ const twoPermission = {
   gcpDefault() {
     // Legacy: getCurrentPosition() with no options = request precise
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY:
         return legacyBehavior === "returns-approx"
@@ -191,7 +191,7 @@ const twoPermission = {
 
   gcpApproximate() {
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY: return "returns position";
       case STATES.PRECISE: return "returns position";
@@ -200,7 +200,7 @@ const twoPermission = {
 
   gcpPrecise() {
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY: return "prompts user";
       case STATES.PRECISE: return "returns position";
@@ -212,7 +212,7 @@ const twoPermission = {
     const b = this.gcpDefault();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
@@ -221,7 +221,7 @@ const twoPermission = {
     const b = this.gcpApproximate();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
@@ -230,7 +230,7 @@ const twoPermission = {
     const b = this.gcpPrecise();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
@@ -260,7 +260,7 @@ const singlePermission = {
 
   gcpDefault() {
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY:
         return legacyBehavior === "returns-approx"
@@ -272,7 +272,7 @@ const singlePermission = {
 
   gcpApproximate() {
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY: return "returns position";
       case STATES.PRECISE: return "returns position";
@@ -281,7 +281,7 @@ const singlePermission = {
 
   gcpPrecise() {
     switch (userState) {
-      case STATES.DENIED: return "throws (denied)";
+      case STATES.DENIED: return "error: PERMISSION_DENIED";
       case STATES.PROMPT: return "prompts user";
       case STATES.APPROX_ONLY: return "prompts user"; // upgrade prompt
       case STATES.PRECISE: return "returns position";
@@ -294,7 +294,7 @@ const singlePermission = {
     const b = this.gcpDefault();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
@@ -304,7 +304,7 @@ const singlePermission = {
     const b = this.gcpApproximate();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
@@ -314,7 +314,7 @@ const singlePermission = {
     const b = this.gcpPrecise();
     if (q === "granted" && b.startsWith("returns")) return true;
     if (q === "prompt" && b === "prompts user") return true;
-    if (q === "denied" && b.includes("throws")) return true;
+    if (q === "denied" && b.includes("error")) return true;
     return false;
   },
 
