@@ -9,22 +9,20 @@
 </head>
 <body>
 
-<div class="sticky-bar" id="sticky-bar">
-  <div class="sticky-inner">
-    <div class="state-buttons" role="group" aria-label="Simulate user permission state">
-      <label class="toggle-label">User granted:</label>
-      <button class="seg-btn active" data-state="prompt">No Decision</button>
-      <button class="seg-btn" data-state="approx">Approximate Only</button>
-      <button class="seg-btn" data-state="precise">Precise</button>
-      <button class="seg-btn" data-state="denied">Denied</button>
-    </div>
-    <div class="legacy-toggle" role="group" aria-label="Legacy getCurrentPosition behavior">
-      <span class="toggle-label">Legacy behavior:</span>
-      <button class="seg-btn seg-btn--small active" data-legacy="returns-approx">Permissive</button>
-      <button class="seg-btn seg-btn--small" data-legacy="prompts-precise">Strict</button>
-    </div>
-  </div>
-</div>
+<nav class="sticky-bar" id="sticky-bar">
+  <fieldset class="state-buttons" aria-label="Simulate user permission state">
+    <label class="toggle-label">User granted:</label>
+    <button class="seg-btn active" data-state="prompt">No Decision</button>
+    <button class="seg-btn" data-state="approx">Approximate Only</button>
+    <button class="seg-btn" data-state="precise">Precise</button>
+    <button class="seg-btn" data-state="denied">Denied</button>
+  </fieldset>
+  <fieldset class="legacy-toggle" aria-label="Legacy getCurrentPosition behavior">
+    <label class="toggle-label">Legacy behavior:</label>
+    <button class="seg-btn seg-btn--small active" data-legacy="returns-approx">Permissive</button>
+    <button class="seg-btn seg-btn--small" data-legacy="prompts-precise">Strict</button>
+  </fieldset>
+</nav>
 
 <header class="hero">
   <h1>Approximate Geolocation: Single vs. Two-Permission Model</h1>
@@ -35,9 +33,7 @@
 
   <!-- Card 1: Weather App -->
   <article class="card" id="card-1">
-    <header class="card-header">
-      <h2>Weather App</h2>
-    </header>
+    <h2>Weather App</h2>
     <p class="card-prose">A weather app only needs city-level location. It declares what accuracy it needs and handles the result. Under both models, this works identically.</p>
     <pre class="code-block"><code class="language-javascript">const status = await navigator.permissions.query({
   name: "geolocation"
@@ -47,32 +43,20 @@ navigator.geolocation.getCurrentPosition(
   err => showManualEntry(),
   {accuracyMode: "approximate"}
 );</code></pre>
-    <div class="results-strip" id="c1-strip">
-      <div class="results-row">
-        <span class="model-name">Two-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c1-two-query">—</code>
-          <span class="chain-arrow">→</span>
-          <code class="result-val" id="c1-two-gcp">—</code>
-        </span>
-      </div>
-      <div class="results-row">
-        <span class="model-name">Single-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c1-single-query">—</code>
-          <span class="chain-arrow">→</span>
-          <code class="result-val" id="c1-single-gcp">—</code>
-        </span>
-      </div>
+    <output class="results-strip" id="c1-strip">
+      <dl>
+        <dt>Two-Permission:</dt>
+        <dd><code id="c1-two-query">—</code> → <code id="c1-two-gcp">—</code></dd>
+        <dt>Single-Permission:</dt>
+        <dd><code id="c1-single-query">—</code> → <code id="c1-single-gcp">—</code></dd>
+      </dl>
       <p class="verdict-line" id="c1-verdict"></p>
-    </div>
+    </output>
   </article>
 
   <!-- Card 2: Upgrade Flow -->
   <article class="card" id="card-2">
-    <header class="card-header">
-      <h2>Upgrade Flow</h2>
-    </header>
+    <h2>Upgrade Flow</h2>
     <p class="card-prose">A ride-sharing app starts with approximate location to show nearby drivers, then upgrades to precise when the user taps "Set pickup location." The user initiated the action; they expect interaction. The developer doesn't need to predict whether a prompt will appear — they call the API and handle the result. This is the same pattern as <code>getUserMedia()</code>.</p>
     <pre class="code-block"><code class="language-javascript">navigator.geolocation.getCurrentPosition(
   pos => showNearbyDrivers(pos),
@@ -85,32 +69,20 @@ navigator.geolocation.getCurrentPosition(
   err => handleError(err),
   {accuracyMode: "precise"}
 );</code></pre>
-    <div class="results-strip" id="c2-strip">
-      <div class="results-row">
-        <span class="model-name">Two-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c2-two-approx">—</code>
-          <span class="chain-sep">then</span>
-          <code class="result-val" id="c2-two-precise">—</code>
-        </span>
-      </div>
-      <div class="results-row">
-        <span class="model-name">Single-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c2-single-approx">—</code>
-          <span class="chain-sep">then</span>
-          <code class="result-val" id="c2-single-precise">—</code>
-        </span>
-      </div>
+    <output class="results-strip" id="c2-strip">
+      <dl>
+        <dt>Two-Permission:</dt>
+        <dd><code id="c2-two-approx">—</code> then <code id="c2-two-precise">—</code></dd>
+        <dt>Single-Permission:</dt>
+        <dd><code id="c2-single-approx">—</code> then <code id="c2-single-precise">—</code></dd>
+      </dl>
       <p class="verdict-line" id="c2-verdict"></p>
-    </div>
+    </output>
   </article>
 
   <!-- Card 3: enableHighAccuracy Precedent -->
   <article class="card" id="card-3">
-    <header class="card-header">
-      <h2>The <code>enableHighAccuracy</code> Precedent</h2>
-    </header>
+    <h2>The <code>enableHighAccuracy</code> Precedent</h2>
     <p class="card-prose">Today, <code>enableHighAccuracy</code> is a <code>PositionOptions</code> hint with no separate queryable permission and no result attribute reporting what the UA did. <code>query({name: "geolocation"})</code> returning <code>"granted"</code> has never guaranteed high-accuracy results. The developer checks <code>coords.accuracy</code> and adapts. <code>accuracyMode</code> is architecturally the same kind of thing.</p>
     <pre class="code-block"><code class="language-javascript">const status = await navigator.permissions.query({
   name: "geolocation"
@@ -118,32 +90,20 @@ navigator.geolocation.getCurrentPosition(
 navigator.geolocation.getCurrentPosition(success, error, {
   enableHighAccuracy: true
 });</code></pre>
-    <div class="results-strip" id="c3-strip">
-      <div class="results-row">
-        <span class="model-name">Two-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c3-two-query">—</code>
-          <span class="chain-arrow">→</span>
-          <code class="result-val" id="c3-two-gcp">—</code>
-        </span>
-      </div>
-      <div class="results-row">
-        <span class="model-name">Single-Permission:</span>
-        <span class="result-chain">
-          <code class="result-val" id="c3-single-query">—</code>
-          <span class="chain-arrow">→</span>
-          <code class="result-val" id="c3-single-gcp">—</code>
-        </span>
-      </div>
+    <output class="results-strip" id="c3-strip">
+      <dl>
+        <dt>Two-Permission:</dt>
+        <dd><code id="c3-two-query">—</code> → <code id="c3-two-gcp">—</code></dd>
+        <dt>Single-Permission:</dt>
+        <dd><code id="c3-single-query">—</code> → <code id="c3-single-gcp">—</code></dd>
+      </dl>
       <p class="verdict-line" id="c3-verdict"></p>
-    </div>
+    </output>
   </article>
 
   <!-- Card 4: The Privacy Cost -->
   <article class="card" id="card-4">
-    <header class="card-header">
-      <h2>The Privacy Cost</h2>
-    </header>
+    <h2>The Privacy Cost</h2>
     <p class="card-prose">Under the two-permission model, any third-party script can silently learn the user's accuracy preference on page load without a user gesture. This compounds the concern raised in <a href="https://github.com/w3c/permissions/issues/52" class="ext-link">w3c/permissions#52</a> (open since 2015). The single-permission model doesn't leak this choice.</p>
     <pre class="code-block"><code class="language-javascript">const approx = await navigator.permissions.query({
   name: "geolocation-approximate"
@@ -154,34 +114,21 @@ const precise = await navigator.permissions.query({
 if (approx.state === "granted" &amp;&amp; precise.state === "prompt") {
   trackUserPrivacyPreference("approximate-only");
 }</code></pre>
-    <div class="results-strip" id="c4-strip">
-      <div class="results-row">
-        <span class="model-name">Two-Permission:</span>
-        <span class="result-chain">
-          <span class="chain-label">approx:</span>
-          <code class="result-val" id="c4-two-approx">—</code>
-          <span class="chain-sep">+</span>
-          <span class="chain-label">precise:</span>
-          <code class="result-val" id="c4-two-geo">—</code>
-        </span>
-      </div>
-      <div class="results-row">
-        <span class="model-name">Single-Permission:</span>
-        <span class="result-chain">
-          <span class="chain-label">geolocation:</span>
-          <code class="result-val" id="c4-single-geo">—</code>
-          <span class="chain-sep">(only queryable)</span>
-        </span>
-      </div>
+    <output class="results-strip" id="c4-strip">
+      <dl>
+        <dt>Two-Permission:</dt>
+        <dd>approx: <code id="c4-two-approx">—</code> + precise: <code id="c4-two-geo">—</code></dd>
+        <dt>Single-Permission:</dt>
+        <dd>geolocation: <code id="c4-single-geo">—</code> <small>(only queryable)</small></dd>
+      </dl>
       <p class="verdict-line" id="c4-verdict"></p>
-    </div>
+    </output>
   </article>
 
   <!-- Summary Table -->
   <details class="summary-details">
     <summary>Full 12-scenario matrix</summary>
-    <div class="summary-inner">
-      <table class="summary-table">
+    <table class="summary-table">
         <thead>
           <tr>
             <th>State</th>
@@ -193,7 +140,6 @@ if (approx.state === "granted" &amp;&amp; precise.state === "prompt") {
         <tbody id="summary-body"></tbody>
       </table>
       <p class="summary-score" id="summary-score"></p>
-    </div>
   </details>
 
 </main>
