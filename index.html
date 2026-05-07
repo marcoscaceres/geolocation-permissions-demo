@@ -25,8 +25,9 @@
 </nav>
 
 <header class="hero">
-  <h1>Approximate Geolocation: Single vs. Two-Permission Model</h1>
-  <p class="thesis">A single <code>geolocation</code> permission with an <code>accuracyMode</code> hint satisfies every developer use case that a two-permission model can, without leaking the user's accuracy preference to third-party scripts.</p>
+  <h1>Approximate Geolocation: Permissions Model Comparison</h1>
+  <p class="thesis"><a href="https://github.com/w3c/geolocation/pull/195" class="ext-link">PR #195</a> adds approximate location support to the Geolocation API. Both sides agree on <code>PositionOptions.accuracyMode</code> (letting sites declare what accuracy they need). The remaining question: should <code>"geolocation-approximate"</code> be a separate queryable permission via <code>permissions.query()</code>?</p>
+  <p class="thesis">This demo tests both models against real developer patterns. Toggle the permission state above to see how each model behaves. The finding: under the more backwards-compatible interpretation, both models have exactly one prediction failure, on opposite sides.</p>
 </header>
 
 <main>
